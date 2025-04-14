@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dự đoán giá nhà TP.HCM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Dự đoán giá nhà TP.HCM</h1>
+    <form id="predict-form" class="card p-4 shadow">
+        <div class="row">
+            <!-- Quận -->
+            <div class="col-md-4 mb-3">
+                <label for="district" class="form-label">Quận/Huyện</label>
+                <select id="district" class="form-select" required>
+                    <option value="">Chọn quận</option>
+                    {% for district in districts %}
+                    <option value="{{ district }}">{{ district }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Phường -->
+            <div class="col-md-4 mb-3">
+                <label for="ward" class="form-label">Phường/Xã</label>
+                <select id="ward" class="form-select" required>
+                    <option value="">Chọn phường</option>
+                </select>
+            </div>
+            <!-- Đường -->
+            <div class="col-md-4 mb-3">
+                <label for="street" class="form-label">Tên đường</label>
+                <input type="text" id="street" class="form-control" placeholder="Nhập tên đường" required>
+                <div id="street-suggestions" class="dropdown-menu w-100"></div>
+            </div>
+        </div>
+        <div class="row">
+            <!-- Loại nhà -->
+            <div class="col-md-4 mb-3">
+                <label for="house_type" class="form-label">Loại nhà</label>
+                <select id="house_type" class="form-select" required>
+                    <option value="">Chọn loại nhà</option>
+                    {% for house_type in house_types %}
+                    <option value="{{ house_type }}">{{ house_type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Pháp lý -->
+            <div class="col-md-4 mb-3">
+                <label for="legal_status" class="form-label">Pháp lý</label>
+                <select id="legal_status" class="form-select" required>
+                    <option value="">Chọn pháp lý</option>
+                    {% for legal_status in legal_statuses %}
+                    <option value="{{ legal_status }}">{{ legal_status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Chiều dài -->
+            <div class="col-md-4 mb-3">
+                <label for="length" class="form-label">Chiều dài (m)</label>
+                <input type="number" id="length" class="form-control" step="0.1" required>
+            </div>
+        </div>
+        <div class="row">
+            <!-- Chiều rộng -->
+            <div class="col-md-4 mb-3">
+                <label for="width" class="form-label">Chiều rộng (m)</label>
+                <input type="number" id="width" class="form-control" step="0.1" required>
+            </div>
+            <!-- Số tầng -->
+            <div class="col-md-4 mb-3">
+                <label for="floors" class="form-label">Số tầng</label>
+                <input type="number" id="floors" class="form-control" required>
+            </div>
+            <!-- Phòng ngủ -->
+            <div class="col-md-4 mb-3">
+                <label for="bedrooms" class="form-label">Số phòng ngủ</label>
+                <input type="number" id="bedrooms" class="form-control" required>
+            </div>
+        </div>
+        <div class="row">
+            <!-- Nhà vệ sinh -->
+            <div class="col-md-4 mb-3">
+                <label for="bathrooms" class="form-label">Số nhà vệ sinh</label>
+                <input type="number" id="bathrooms" class="form-control" required>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Dự đoán</button>
+    </form>
+    <!-- Kết quả -->
+    <div id="result" class="mt-4 text-center"></div>
+</div>
+<div class="mt-4 p-5 bg-primary text-white rounded">
+    <h1>Copyright&copy;2025</h1>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
