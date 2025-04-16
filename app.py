@@ -10,16 +10,12 @@ app = Flask(__name__)
 with open('data/hcm_districts.json', encoding='utf-8') as f:
     hcm_data = json.load(f)
 
-# Load mô hình và các encoder
+# Load mô hình và preprocessor
 model = joblib.load('data/trained_model.pkl')
-le_district = joblib.load('data/le_district.pkl')
-le_ward = joblib.load('data/le_ward.pkl')
-le_street = joblib.load('data/le_street.pkl')
-le_house_type = joblib.load('data/le_house_type.pkl')
-le_legal_status = joblib.load('data/le_legal_status.pkl')
+preprocessor = joblib.load('data/preprocessor.pkl')
 
 # Danh sách loại nhà và pháp lý
-house_types = ["Nhà ngõ, hẻm", "Nhà mặt phố, mặt tiền", "Nhà phố liền kề", "Nhà biệt thự"]
+house_types = ["Nhà ngõ, hẻm", "Nhà mặt phố, mặt tiền", "Nhà phố liền kề"]
 legal_statuses = ["Đã có sổ", "Không có sổ", "Giấy tờ viết tay", "Sổ chung / công chứng vi bằng", "Đang chờ sổ"]
 
 @app.route('/')
@@ -37,57 +33,70 @@ def get_streets(district):
     streets = hcm_data.get(district, {}).get('đường', [])
     return jsonify(streets)
 
-@app.route('/search_street/<query>')
-def search_street(query):
+@app.route('/search_street_in_district', methods=['GET'])
+def search_street_in_district():
+    district = request.args.get('district')
+    query = request.args.get('query', '')
+    if not district:
+        return jsonify([])
+
+    streets = hcm_data.get(district, {}).get('đường', [])
     query = unidecode(query.lower())
-    results = []
-    for district, info in hcm_data.items():
-        for street in info.get('đường', []):
-            if query in unidecode(street.lower()):
-                results.append({'district': district, 'street': street})
-    return jsonify(results)
+    filtered = [s for s in streets if query in unidecode(s.lower())]
+    return jsonify(filtered)
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.form
-    district = data['district']
-    ward = data['ward']
-    street = data['street']
-    length = float(data['length'])
-    width = float(data['width'])
-    bedrooms = int(data['bedrooms'])
-    bathrooms = int(data['bathrooms'])
-    floors = int(data['floors'])
-    house_type = data['house_type']
-    legal_status = data['legal_status']
-
-    # Mã hóa dữ liệu
     try:
-        district_encoded = le_district.transform([district])[0]
-        ward_encoded = le_ward.transform([ward])[0]
-        street_encoded = le_street.transform([street])[0]
-        house_type_encoded = le_house_type.transform([house_type])[0]
-        legal_status_encoded = le_legal_status.transform([legal_status])[0]
-    except:
-        return jsonify({'error': 'Invalid input data'}), 400
+        # Validate required fields
+        required_fields = ['district', 'ward', 'street', 'house_type', 'legal_status', 'length', 'width', 'bedrooms', 'bathrooms', 'floors']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Missing required field: {field}'}), 400
 
-    # Tạo dataframe để dự đoán
-    input_data = pd.DataFrame({
-        'district': [district_encoded],
-        'ward': [ward_encoded],
-        'street': [street_encoded],
-        'length': [length],
-        'width': [width],
-        'bedrooms': [bedrooms],
-        'bathrooms': [bathrooms],
-        'floors': [floors],
-        'house_type': [house_type_encoded],
-        'legal_status': [legal_status_encoded]
-    })
+        # Convert and validate numeric inputs
+        district = unidecode(str(data['district']).lower())
+        ward = unidecode(str(data['ward']).lower())
+        street = unidecode(str(data['street']).lower())
+        house_type = unidecode(str(data['house_type']).lower())
+        legal_status = unidecode(str(data['legal_status']).lower())
+        try:
+            length = float(data['length'])
+            width = float(data['width'])
+            bedrooms = int(data['bedrooms'])
+            bathrooms = int(data['bathrooms'])
+            floors = int(data['floors'])
+        except ValueError:
+            return jsonify({'error': 'Numeric fields must be valid numbers'}), 400
 
-    # Dự đoán giá
-    price = model.predict(input_data)[0]
-    return jsonify({'price': round(price, 2)})
+        # Additional validation (e.g., positive numbers)
+        if length <= 0 or width <= 0 or bedrooms < 0 or bathrooms < 0 or floors <= 0:
+            return jsonify({'error': 'Numeric fields must be positive (except bedrooms/bathrooms can be 0)'}), 400
+
+        # Create input DataFrame
+        input_data = pd.DataFrame({
+            'district': [district],
+            'ward': [ward],
+            'street': [street],
+            'house_type': [house_type],
+            'legal_status': [legal_status],
+            'width': [width],
+            'length': [length],
+            'bedrooms': [bedrooms],
+            'bathrooms': [bathrooms],
+            'floors': [floors]
+        })
+
+        # Process and predict
+        X_processed = preprocessor.transform(input_data)
+        price = model.predict(X_processed)[0]
+        return jsonify({'price': round(price, 2)})
+
+    except Exception as e:
+        return jsonify({'error': f'Prediction failed: {str(e)}'}), 400
+
 
 if __name__ == '__main__':
     with app.app_context():

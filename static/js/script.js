@@ -14,16 +14,18 @@ $(document).ready(function () {
         }
     });
 
-    // Tìm kiếm tên đường
+       // Tìm kiếm đường theo quận
     $('#street').on('input', function () {
         const query = $(this).val();
-        if (query.length > 2) {
-            $.get(`/search_street/${query}`, function (data) {
+        const district = $('#district').val();
+
+        if (district && query.length > 2) {
+            $.get(`/search_street_in_district`, { district, query }, function (data) {
                 $('#street-suggestions').empty().show();
-                data.forEach(item => {
+                data.forEach(street => {
                     $('#street-suggestions').append(`
-                        <a class="dropdown-item" href="#" data-district="${item.district}" data-street="${item.street}">
-                            ${item.street} (${item.district})
+                        <a class="dropdown-item" href="#" data-street="${street}">
+                            ${street}
                         </a>
                     `);
                 });
@@ -33,17 +35,12 @@ $(document).ready(function () {
         }
     });
 
-    // Chọn đường từ gợi ý
+     // Chọn đường từ gợi ý
     $('#street-suggestions').on('click', '.dropdown-item', function (e) {
         e.preventDefault();
-        const district = $(this).data('district');
         const street = $(this).data('street');
-        $('#district').val(district);
         $('#street').val(street);
         $('#street-suggestions').hide();
-
-        // Load lại wards cho district
-        $('#district').trigger('change');
     });
 
     // Submit form dự đoán
@@ -62,15 +59,19 @@ $(document).ready(function () {
             floors: $('#floors').val()
         };
 
-        $.ajax({
+       $.ajax({
             url: '/predict',
             type: 'POST',
             data: formData,
             success: function (response) {
-                $('#result').html(`Giá nhà dự đoán: ${response.price} tỷ VNĐ`).addClass('text-success');
+                $('#result').html(`Giá nhà dự đoán: ${response.price} tỷ VNĐ`).removeClass('text-danger').addClass('text-success');
             },
-            error: function () {
-                $('#result').html('Có lỗi xảy ra, vui lòng thử lại!').addClass('text-danger');
+            error: function (xhr) {
+                let errorMsg = 'Có lỗi xảy ra, vui lòng thử lại!';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                $('#result').html(errorMsg).removeClass('text-success').addClass('text-danger');
             }
         });
     });
