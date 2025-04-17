@@ -44,35 +44,56 @@ $(document).ready(function () {
     });
 
     // Submit form dự đoán
-    $('#predict-form').submit(function (e) {
-        e.preventDefault();
-        const formData = {
-            district: $('#district').val(),
-            ward: $('#ward').val(),
-            street: $('#street').val(),
-            house_type: $('#house_type').val(),
-            legal_status: $('#legal_status').val(),
-            length: $('#length').val(),
-            width: $('#width').val(),
-            bedrooms: $('#bedrooms').val(),
-            bathrooms: $('#bathrooms').val(),
-            floors: $('#floors').val()
-        };
+    let allowedStreets = [];
 
-       $.ajax({
-            url: '/predict',
-            type: 'POST',
-            data: formData,
-            success: function (response) {
-                $('#result').html(`Giá nhà dự đoán: ${response.price} tỷ VNĐ`).removeClass('text-danger').addClass('text-success');
-            },
-            error: function (xhr) {
-                let errorMsg = 'Có lỗi xảy ra, vui lòng thử lại!';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMsg = xhr.responseJSON.error;
-                }
-                $('#result').html(errorMsg).removeClass('text-success').addClass('text-danger');
-            }
+$('#district').change(function () {
+    const district = $(this).val();
+    if (district) {
+        $.get(`/get_streets/${district}`, function (streets) {
+            allowedStreets = streets;
         });
+    } else {
+        allowedStreets = [];
+    }
+});
+
+$('#predict-form').submit(function (e) {
+    e.preventDefault();
+    const street = $('#street').val();
+
+    if (!allowedStreets.includes(street)) {
+        $('#result').html('Vui lòng chọn đường từ danh sách có sẵn').removeClass('text-success').addClass('text-danger');
+        return;
+    }
+
+    const formData = {
+        district: $('#district').val(),
+        ward: $('#ward').val(),
+        street: street,
+        house_type: $('#house_type').val(),
+        legal_status: $('#legal_status').val(),
+        length: $('#length').val(),
+        width: $('#width').val(),
+        bedrooms: $('#bedrooms').val(),
+        bathrooms: $('#bathrooms').val(),
+        floors: $('#floors').val()
+    };
+
+    $.ajax({
+        url: '/predict',
+        type: 'POST',
+        data: formData,
+        success: function (response) {
+            $('#result').html(`Giá nhà dự đoán: ${response.price} tỷ VNĐ`).removeClass('text-danger').addClass('text-success');
+        },
+        error: function (xhr) {
+            let errorMsg = 'Có lỗi xảy ra, vui lòng thử lại!';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMsg = xhr.responseJSON.error;
+            }
+            $('#result').html(errorMsg).removeClass('text-success').addClass('text-danger');
+        }
     });
+});
+
 });
