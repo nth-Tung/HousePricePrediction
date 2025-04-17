@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, jsonify
 import json
+
 import joblib
 import pandas as pd
+from tensorflow.keras.models import load_model
+from flask import Flask, render_template, request, jsonify
 from unidecode import unidecode
-
+import joblib
 app = Flask(__name__)
 
 # Load dữ liệu quận, phường, đường
@@ -11,8 +13,9 @@ with open('data/hcm_districts.json', encoding='utf-8') as f:
     hcm_data = json.load(f)
 
 # Load mô hình và preprocessor
-model = joblib.load('data/trained_model.pkl')
-preprocessor = joblib.load('data/preprocessor.pkl')
+model = load_model('model/my_model.h5')
+scaler = joblib.load('model/scaler.pkl')
+dummy_columns = joblib.load('model/dummy_columns.pkl')
 
 # Danh sách loại nhà và pháp lý
 house_types = ["Nhà ngõ, hẻm", "Nhà mặt phố, mặt tiền", "Nhà phố liền kề"]
@@ -75,24 +78,51 @@ def predict():
         if length <= 0 or width <= 0 or bedrooms < 0 or bathrooms < 0 or floors <= 0:
             return jsonify({'error': 'Numeric fields must be positive (except bedrooms/bathrooms can be 0)'}), 400
 
-        # Create input DataFrame
-        input_data = pd.DataFrame({
-            'district': [district],
-            'ward': [ward],
-            'street': [street],
+        # # Create input DataFrame
+        # input_data = pd.DataFrame({
+        #     'house_type': [house_type],
+        #     'acreage': [length*width],
+        #     'width': [width],
+        #     'length': [length],
+        #     'bedrooms': [bedrooms],
+        #     'bathrooms': [bathrooms],
+        #     'floors': [floors],
+        #     'legal_status': [legal_status],
+        #     'street': [street],
+        #     'ward': [ward],
+        #     'district': [district]
+        # })
+        # data = pd.read_csv("data/Clean_HCM.csv")
+        #
+        # x = data.iloc[:,1:12]
+
+
+        # data_encoded = pd.get_dummies(x, columns=['house_type', 'legal_status', 'street', 'ward', 'district'])
+        # dummy_colums = list(data_encoded.columns)
+        data_test = pd.DataFrame({
             'house_type': [house_type],
-            'legal_status': [legal_status],
+            'acreage': [length * width],
             'width': [width],
             'length': [length],
             'bedrooms': [bedrooms],
             'bathrooms': [bathrooms],
-            'floors': [floors]
+            'floors': [floors],
+            'legal_status': [legal_status],
+            'street': [street],
+            'ward': [ward],
+            'district': [district]
         })
 
         # Process and predict
-        X_processed = preprocessor.transform(input_data)
-        price = model.predict(X_processed)[0]
-        return jsonify({'price': round(price, 2)})
+        # X_processed = preprocessor.transform(input_data)
+        data_test_encoded = pd.get_dummies(data_test, columns=['house_type', 'legal_status', 'street', 'ward', 'district'])
+        for col in dummy_columns:
+            if col not in data_test_encoded.columns:
+                data_test_encoded[col] = 0
+        data_test_encoded = data_test_encoded[dummy_columns]
+        X_test_scaled = scaler.transform(data_test_encoded)
+        price = model.predict(X_test_scaled)
+        return jsonify({'price':str(round(price[0][0],2))})
 
     except Exception as e:
         return jsonify({'error': f'Prediction failed: {str(e)}'}), 400
