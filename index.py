@@ -1,11 +1,10 @@
 import json
-
 import joblib
 import pandas as pd
 from tensorflow.keras.models import load_model
 from flask import Flask, render_template, request, jsonify
 from unidecode import unidecode
-import joblib
+
 app = Flask(__name__)
 
 # Load dữ liệu quận, phường, đường
@@ -78,27 +77,7 @@ def predict():
         if length <= 0 or width <= 0 or bedrooms < 0 or bathrooms < 0 or floors <= 0:
             return jsonify({'error': 'Numeric fields must be positive (except bedrooms/bathrooms can be 0)'}), 400
 
-        # # Create input DataFrame
-        # input_data = pd.DataFrame({
-        #     'house_type': [house_type],
-        #     'acreage': [length*width],
-        #     'width': [width],
-        #     'length': [length],
-        #     'bedrooms': [bedrooms],
-        #     'bathrooms': [bathrooms],
-        #     'floors': [floors],
-        #     'legal_status': [legal_status],
-        #     'street': [street],
-        #     'ward': [ward],
-        #     'district': [district]
-        # })
-        # data = pd.read_csv("data/Clean_HCM.csv")
-        #
-        # x = data.iloc[:,1:12]
-
-
-        # data_encoded = pd.get_dummies(x, columns=['house_type', 'legal_status', 'street', 'ward', 'district'])
-        # dummy_colums = list(data_encoded.columns)
+        # Create input DataFrame
         data_test = pd.DataFrame({
             'house_type': [house_type],
             'acreage': [length * width],
@@ -114,7 +93,6 @@ def predict():
         })
 
         # Process and predict
-        # X_processed = preprocessor.transform(input_data)
         data_test_encoded = pd.get_dummies(data_test, columns=['house_type', 'legal_status', 'street', 'ward', 'district'])
         for col in dummy_columns:
             if col not in data_test_encoded.columns:
