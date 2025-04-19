@@ -4,11 +4,15 @@ import pandas as pd
 from tensorflow.keras.models import load_model
 from flask import Flask, render_template, request, jsonify
 from unidecode import unidecode
+import os
 
 app = Flask(__name__)
 
 # Load dữ liệu quận, phường, đường
-with open('data/hcm_districts.json', encoding='utf-8') as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, 'data', 'hcm_districts.json')
+
+with open(DATA_PATH, encoding='utf-8') as f:
     hcm_data = json.load(f)
 
 # Load mô hình và preprocessor
