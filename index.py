@@ -16,9 +16,12 @@ with open(DATA_PATH, encoding='utf-8') as f:
     hcm_data = json.load(f)
 
 # Load mô hình và preprocessor
-model = load_model('model/my_model.h5')
-scaler = joblib.load('model/scaler.pkl')
-dummy_columns = joblib.load('model/dummy_columns.pkl')
+MODEL_PATH = os.path.join(BASE_DIR,'model','my_model.h5')
+SCALER_PATH = os.path.join(BASE_DIR,'model','scaler.pkl')
+DUMMY_PATH = os.path.join(BASE_DIR,'model','dummy_columns.pkl')
+model = load_model(MODEL_PATH)
+scaler = joblib.load(SCALER_PATH)
+dummy_columns = joblib.load(DUMMY_PATH)
 
 # Danh sách loại nhà và pháp lý
 house_types = ["Nhà ngõ, hẻm", "Nhà mặt phố, mặt tiền", "Nhà phố liền kề"]
