@@ -85,6 +85,8 @@ $('#predict-form').submit(function (e) {
         data: formData,
         success: function (response) {
             $('#result').html(`Giá nhà dự đoán: ${response.price} tỷ VNĐ`).removeClass('text-danger').addClass('text-success');
+            $('#price_level').html(`Phân khúc giá nhà ở: ${response.price_level}`).removeClass('text-danger').addClass('text-success');
+            $('#price_range').html(`Giá dao động: ${response.price_range}`).removeClass('text-danger').addClass('text-success');
         },
         error: function (xhr) {
             let errorMsg = 'Có lỗi xảy ra, vui lòng thử lại!';
