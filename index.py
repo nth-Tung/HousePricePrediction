@@ -18,6 +18,7 @@ DATA_PATH = os.path.join(BASE_DIR, 'data', 'hcm_districts.json')
 
 with open(DATA_PATH, encoding='utf-8') as f:
     hcm_data = json.load(f)
+huy =0
 
 # Load mô hình và preprocessor
 MODEL_PATH = os.path.join(BASE_DIR,'model','my_model.h5')
