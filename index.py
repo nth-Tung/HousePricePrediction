@@ -13,7 +13,6 @@ import utils
 
 app = Flask(__name__)
 
-# Load dữ liệu quận, phường, đường
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, 'data', 'hcm_districts.json')
 
@@ -67,13 +66,11 @@ def predict():
     global str
     data = request.form
     try:
-        # Validate required fields
         required_fields = ['district', 'ward', 'street', 'house_type', 'legal_status', 'length', 'width', 'bedrooms', 'bathrooms', 'floors']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'Missing required field: {field}'}), 400
 
-        # Convert and validate numeric inputs
         district = unidecode(str(data['district']).lower())
         ward = unidecode(str(data['ward']).lower())
         street = unidecode(str(data['street']).lower())
@@ -88,56 +85,16 @@ def predict():
         except ValueError:
             return jsonify({'error': 'Numeric fields must be valid numbers'}), 400
 
-        # Additional validation (e.g., positive numbers)
         if length <= 0 or width <= 0 or bedrooms < 0 or bathrooms < 0 or floors <= 0:
             return jsonify({'error': 'Numeric fields must be positive (except bedrooms/bathrooms can be 0)'}), 400
 
-        #Create input DataFrame
-        # data_test = pd.DataFrame({
-        #     'house_type': [house_type],
-        #     'acreage': [length * width],
-        #     'width': [width],
-        #     'length': [length],
-        #     'bedrooms': [bedrooms],
-        #     'bathrooms': [bathrooms],
-        #     'floors': [floors],
-        #     'legal_status': [legal_status],
-        #     'street': [street],
-        #     'ward': [ward],
-        #     'district': [district]
-        # })
-        #
-        # # Process and predict
-        # data_test_encoded = pd.get_dummies(data_test, columns=['house_type', 'legal_status', 'street', 'ward', 'district'])
-        # for col in dummy_columns:
-        #     if col not in data_test_encoded.columns:
-        #         data_test_encoded[col] = 0
-        # data_test_encoded = data_test_encoded[dummy_columns]
-        # X_test_scaled = scaler.transform(data_test_encoded)
-        # price = model.predict(X_test_scaled)
-
-        # house_type = 'nha ngo, hem'
-        # acreage = 8.4
-        # width = width
-        # length = length
-        # bedrooms = 5
-        # bathrooms = 4
-        # floors = 5
-        # legal_status = 'da co so'
-        # street = 'duong le van sy'
-        # ward = 'phuong 12'
-        # district = 'quan 3'
         acreage = length * width
         import pandas as pd
-        columns = ['house_type', 'acreage', 'width', 'length', 'bedrooms', 'bathrooms', 'floors',
-                   'legal_status', 'street', 'ward', 'district']
+        columns = ['house_type', 'acreage', 'width', 'length', 'bedrooms', 'bathrooms', 'floors','legal_status', 'street', 'ward', 'district']
 
-        data_test = pd.DataFrame([[house_type, acreage, width, length, bedrooms, bathrooms, floors,
-                                   legal_status, street, ward, district]],
-                                 columns=columns)
+        data_test = pd.DataFrame([[house_type, acreage, width, length, bedrooms, bathrooms, floors,legal_status, street, ward, district]],columns=columns)
 
-        data_test_encoded = pd.get_dummies(data_test, columns=['house_type', 'legal_status',
-                                                               'street', 'ward', 'district'])
+        data_test_encoded = pd.get_dummies(data_test, columns=['house_type', 'legal_status','street', 'ward', 'district'])
 
         for col in dummy_columns:
             if col not in data_test_encoded.columns:
@@ -150,18 +107,15 @@ def predict():
         prediction = model.predict(X_test_scaled)
         y_pred = np.argmax(prediction, axis=1)
         y_pred_labels = encoder_label.inverse_transform(y_pred)
-        print("Price level:", y_pred_labels)
 
-        df = pd.read_csv("data/Clean_HCM (1).csv")
+        df = pd.read_csv("data/Clean_HCM.csv")
         df1 = df[(df['district'] == district) & (df['price level'] == y_pred_labels[0])]
 
 
         x_LN = df1.iloc[:, 1:12]
         Y_LN = df1.iloc[:, 0:1]
         # y_LN = np.array(Y_LN)
-        print(x_LN)
-        data_encoded_LN = pd.get_dummies(x_LN, columns=['house_type', 'legal_status', 'street', 'ward',
-                                                        'district'])
+        data_encoded_LN = pd.get_dummies(x_LN, columns=['house_type', 'legal_status', 'street', 'ward','district'])
         scaler_LN = StandardScaler()
         X_scaled_LN = scaler_LN.fit_transform(data_encoded_LN)
         # Xu ly trong tap label
@@ -171,14 +125,10 @@ def predict():
         model_LN.fit(X_train, y_train)
 
 
-        columns = ['house_type', 'acreage', 'width', 'length', 'bedrooms', 'bathrooms', 'floors',
-                   'legal_status', 'street', 'ward', 'district']
-        data_test_LN = pd.DataFrame([[house_type, acreage, width, length, bedrooms, bathrooms, floors,
-                                      legal_status, street, ward, district]],
-                                    columns=columns)
+        columns = ['house_type', 'acreage', 'width', 'length', 'bedrooms', 'bathrooms', 'floors','legal_status', 'street', 'ward', 'district']
+        data_test_LN = pd.DataFrame([[house_type, acreage, width, length, bedrooms, bathrooms, floors,legal_status, street, ward, district]],columns=columns)
         dummy_columns_LN = data_encoded_LN.columns.tolist()
-        data_test_encoded_LN = pd.get_dummies(data_test_LN, columns=['house_type', 'legal_status',
-                                                                     'street', 'ward', 'district'])
+        data_test_encoded_LN = pd.get_dummies(data_test_LN, columns=['house_type', 'legal_status','street', 'ward', 'district'])
         for col in dummy_columns_LN:
             if col not in data_test_encoded_LN.columns:
                 data_test_encoded_LN[col] = 0
@@ -187,11 +137,9 @@ def predict():
         # print(data_test_encoded_LN)
 
         X_test_scaled_LN = scaler_LN.transform(data_test_encoded_LN)
+
         prediction = model_LN.predict(X_test_scaled_LN)
-        print(prediction[0][0])
-
         price_range = utils.price_range(district,y_pred_labels[0])
-
         price_label = utils.vietnamese_label(y_pred_labels[0])
 
         return jsonify({'price':str(round(prediction[0][0],2)),

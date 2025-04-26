@@ -9,7 +9,6 @@ def filter(district):
             q1 = row['Q1']
             q2 = row['Q2']
             break
-    print(q1, q2)
     return q1, q2
 
 def price_range(district, price_level):
@@ -28,5 +27,3 @@ def vietnamese_label(price_level):
         return "Trung bình"
     else:
         return "Cao"
-
-print(price_range('quan 10','trung binh'))
